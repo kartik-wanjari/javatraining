@@ -9,25 +9,22 @@
 
 package oopsimpl;
 
-import com.itextpdf.text.DocumentException;
-import com.opencsv.exceptions.CsvValidationException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import java.io.File;
-import java.io.IOException;
 
 public class Controller {
     public static Logger logger = LogManager.getLogger(Controller.class);
     public static void main(String[] args) throws Exception {
+        logger.info("Creating model object");
         Model file = new Model(new File("/Users/azuga/Documents/Azuga Training/API/museum.csv"));
-        Model json = new Model("/Users/azuga/Documents/Azuga Training/API/museum.json");
         System.out.println(file.getFile().getPath());
-
+        logger.info("creating converter interface object");
         ConverterService converterService = new ConverterServiceImpl();
+        logger.info("Invoking csv to html");
         converterService.csvToHtml(file.getFile());
         converterService.csvToPdf(file.getFile().getPath());
-        converterService.jsonToXML(json.getJson());
+        converterService.jsonToXML("/Users/azuga/Documents/Azuga Training/API/museum for xml.json");
 
         ChartsService chartsService = new ChartsServiceImpl();
         chartsService.lineChart();
