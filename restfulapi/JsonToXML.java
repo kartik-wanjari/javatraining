@@ -11,11 +11,10 @@
 package restfulapi;
 import java.io.*;
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.Path;
+import com.github.underscore.U;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.*;
-
 
 /**
  * This class creates XML file by taking input as Json File
@@ -26,50 +25,26 @@ public class JsonToXML {
     /**
      * This method convert Json data to Xml format.
      */
-    static int k=0;
-    private static String convertToXML(String jsonString, String root) throws JSONException {
-        logger.info("collecting json: "+jsonString);
-        JSONObject jsonObject = new JSONObject(jsonString);
-        System.out.println(jsonObject);
-        if(k==0) {
-            logger.info("xml declaration");
-            return "<?xml version=\"1.0\" encoding=\"ISO-8859-15\"?>\n<roots>\n\t<" + root + ">" + XML.toString(jsonObject) + "\t</" + root + ">";
-        }
-        else {
-            logger.debug("Json to xml: "+XML.toString(jsonObject));
-            return "\t\t" + XML.toString(jsonObject);
-        }
-    }
-
-    public void jsonToXML() throws JSONException {
-
-        String path = "/Users/azuga/Documents/Azuga Training/API/museum.json";
-        logger.info("JSON to XML program initiated");
-        logger.debug("Path of museum.json file: "+path);
-        String result;
+    public void jsonToXML() {
+        String json = null;
         try {
-
-            result = new String(Files.readAllBytes(Paths.get(path)));
-            logger.debug("");
-            String json = result.replaceAll("}\\{","}},{{");
-            String[] loopObj = json.split("},\\{");
-
-            StringBuilder sb = new StringBuilder();
-            for(int i = 0 ; i<6;i++,k++){
-
-                String xmlValue = convertToXML(loopObj[i], "root");
-                sb.append(xmlValue.replaceAll("><",">\n<"));
-            }
-            sb.append("\n</roots>");
-            String res = sb.toString();
-
-            FileWriter file = new FileWriter("/Users/azuga/Documents/Azuga Training/API/Json2Xml.xml");
-            file.write(res);
+            logger.info("Reading json from museum.json");
+            json = Files.readString(Path.of("/Users/azuga/Desktop/museum.json"));
+        }catch (IOException e){
+            e.printStackTrace();
+        }
+        logger.info("Converting json to xml");
+        String xml = U.jsonToXml(json);
+        FileWriter file;
+        try {
+            logger.info("Writing xml into museum.xml");
+            file = new FileWriter("/Users/azuga/Documents/Azuga Training/API/Json2Xml.xml");
+            file.write(xml);
             file.flush();
             file.close();
-
-        } catch (IOException e1) {
-            e1.printStackTrace();
+        }catch (IOException e){
+            e.printStackTrace();
         }
+
     }
 }
