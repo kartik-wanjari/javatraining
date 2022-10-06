@@ -43,7 +43,6 @@ public class Task1 {
             } else {
                 logger.error("FileAlreadyExistsException: File already exists");
                 throw new FileAlreadyExistsException("File already exists");
-
             }
         } catch (IOException e) {
             logger.error("IOException: " + e);
