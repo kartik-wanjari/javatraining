@@ -34,34 +34,34 @@ public class CsvToPdf {
             throw new RuntimeException(e);
         }
         String[] nextLine;
-        Document my_pdf_data = new Document();
+        Document pdfData = new Document();
 
         Rectangle rc = new Rectangle(8300f,8000f);
-        my_pdf_data.setPageSize(rc);
+        pdfData.setPageSize(rc);
 
         try {
-            PdfWriter.getInstance(my_pdf_data, new FileOutputStream("/Users/azuga/Desktop/museum2.pdf"));//writing pdf file to given path
+            PdfWriter.getInstance(pdfData, new FileOutputStream("/Users/azuga/Desktop/museum2.pdf"));//writing pdf file to given path
         } catch (DocumentException | FileNotFoundException e) {
             throw new RuntimeException(e);
         }
-        my_pdf_data.open();
-        PdfPTable my_first_table = new PdfPTable(78);
-        PdfPCell table_cell;
+        pdfData.open();
+        PdfPTable table = new PdfPTable(78);
+        PdfPCell tableCell;
         while ((nextLine = reader.readNext()) != null) {
             int i = 0;
             logger.debug("Reading from csv file "+ Arrays.toString(nextLine));
             while (i <= 77) {
-                table_cell = new PdfPCell(new Phrase(nextLine[i]));
-                my_first_table.addCell(table_cell);
+                tableCell = new PdfPCell(new Phrase(nextLine[i]));
+                table.addCell(tableCell);
                 i++;
             }
         }
         try {
-            my_pdf_data.add(my_first_table);
+            pdfData.add(table);
         } catch (DocumentException e) {
             logger.error("Exception "+e.getMessage());
             throw new RuntimeException(e);
         }
-        my_pdf_data.close();
+        pdfData.close();
     }
 }
