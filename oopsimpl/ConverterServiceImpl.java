@@ -11,6 +11,7 @@ package oopsimpl;
 
 
 import au.com.bytecode.opencsv.CSVReader;
+import com.github.underscore.U;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
 import com.itextpdf.text.Phrase;
@@ -18,13 +19,8 @@ import com.itextpdf.text.Rectangle;
 import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.XML;
-
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -37,25 +33,6 @@ import java.util.List;
  */
 public class ConverterServiceImpl implements ConverterService {
     public static Logger logger = LogManager.getLogger(ChartsServiceImpl.class);
-    static int k = 0;
-
-    /**
-     * This method provide xml configuration
-     * @param jsonString json data
-     * @param root xml tag
-     * @return xml format from json
-     * @throws JSONException thrown when json is not in correct format
-     */
-    private static String convertToXML(String jsonString, String root) throws JSONException {
-
-        JSONObject jsonObject = new JSONObject(jsonString);
-        System.out.println(jsonObject);
-        if (k == 0) {
-            return "<?xml version=\"1.0\" encoding=\"ISO-8859-15\"?>\n<roots>\n\t<" + root + ">" + XML.toString(jsonObject) + "\t</" + root + ">";
-        } else {
-            return "\t\t" + XML.toString(jsonObject);
-        }
-    }
 
     /**
      * This method convert csv formatted file to html format
@@ -74,8 +51,7 @@ public class ConverterServiceImpl implements ConverterService {
                 lines.add(s1);
             }
         } catch (IOException e) {
-
-            e.printStackTrace();
+            logger.error("IOException - "+e);
         }
         for (int i = 0; i < lines.size(); i++) {
             lines.set(i, "<tr><td>" + lines.get(i) + "</td></tr>");
@@ -90,8 +66,7 @@ public class ConverterServiceImpl implements ConverterService {
                 writer.write(line + "\n");
             }
         } catch (IOException e) {
-
-            e.printStackTrace();
+            logger.error("IOException - "+e);
         }
     }
 
@@ -99,47 +74,50 @@ public class ConverterServiceImpl implements ConverterService {
      * This method convert csv file to pdf format file
      *
      * @param path museum.csv file path
-     * @throws IOException thrown when path of file incorrect
      */
     @Override
-    public void csvToPdf(String path) throws IOException {
-        CSVReader reader;
+    public void csvToPdf(String path) {
+        CSVReader reader = null;
         try {
-            reader = new CSVReader(new FileReader(path));//reading csv file from given path
+            reader = new CSVReader(new FileReader(path));                   //reading csv file from given path
         } catch (FileNotFoundException e) {
-
-            throw new RuntimeException(e);
+            logger.error("FileNotFoundException - "+e);
         }
         String[] nextLine;
-        Document my_pdf_data = new Document();
+        Document pdfData = new Document();
 
         Rectangle rc = new Rectangle(8300f, 8000f);
-        my_pdf_data.setPageSize(rc);
+        pdfData.setPageSize(rc);
 
         try {
-            PdfWriter.getInstance(my_pdf_data, new FileOutputStream("/Users/azuga/Desktop/museum2.pdf"));//writing pdf file to given path
-        } catch (DocumentException | FileNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-        my_pdf_data.open();
-        PdfPTable my_first_table = new PdfPTable(78);
-        PdfPCell table_cell;
-        while ((nextLine = reader.readNext()) != null) {
-            int i = 0;
-
-            while (i <= 71) {
-                table_cell = new PdfPCell(new Phrase(nextLine[i]));
-                my_first_table.addCell(table_cell);
-                i++;
-            }
-        }
-        try {
-            my_pdf_data.add(my_first_table);
+            PdfWriter.getInstance(pdfData, new FileOutputStream("/Users/azuga/Desktop/museum2.pdf"));       //writing pdf file to given path
         } catch (DocumentException e) {
-
-            throw new RuntimeException(e);
+            logger.error("DocumentException - "+e);
+        }catch (FileNotFoundException e){
+            logger.error("FileNotFoundException - "+e);
         }
-        my_pdf_data.close();
+        pdfData.open();
+        PdfPTable table = new PdfPTable(72);
+        PdfPCell tableCell;
+        try {
+            while ((nextLine = reader != null ? reader.readNext() : null) != null) {
+                int i = 0;
+
+                while (i <= 71) {
+                    tableCell = new PdfPCell(new Phrase(nextLine[i]));
+                    table.addCell(tableCell);
+                    i++;
+                }
+            }
+        }catch (IOException e){
+            logger.error("IOException -"+e);
+        }
+        try {
+            pdfData.add(table);
+        } catch (DocumentException e) {
+            logger.error("DocumentException -"+e);
+        }
+        pdfData.close();
     }
 
     /**
@@ -149,26 +127,24 @@ public class ConverterServiceImpl implements ConverterService {
      */
     @Override
     public void jsonToXML(String path) {
-
-
-        String result;
+        String json = null;
         try {
-            result = new String(Files.readAllBytes(Path.of(path)));
-            String json = result.replaceAll("}\\{", "}},{{");
-            String[] loopObj = json.split("},\\{");
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < 6; i++, k++) {
-                String xmlValue = convertToXML(loopObj[i], "root");
-                sb.append(xmlValue.replaceAll("><", ">\n<"));
-            }
-            sb.append("\n</roots>");
-            String res = sb.toString();
-            FileWriter fileWriter = new FileWriter("/Users/azuga/Desktop/Json2Xml.xml");
-            fileWriter.write(res);
-            fileWriter.flush();
-            fileWriter.close();
-        } catch (IOException e1) {
-            e1.printStackTrace();
+            logger.info("Reading json from museum.json");
+            json = Files.readString(Path.of(path));
+        }catch (IOException e){
+            logger.error("IOException -"+e);
+        }
+        logger.info("Converting json to xml");
+        String xml = U.jsonToXml(json);
+        FileWriter file;
+        try {
+            logger.info("Writing xml into museum.xml");
+            file = new FileWriter("/Users/azuga/Documents/Azuga Training/API/Json2XML.xml");
+            file.write(xml);
+            file.flush();
+            file.close();
+        }catch (IOException e){
+            logger.error("IOException - "+e);
         }
     }
 }
