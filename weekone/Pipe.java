@@ -19,22 +19,18 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Objects;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Pipe {
-
+    String answer = null;
     static final Logger logger = LogManager.getLogger(Pipe.class);
-
-    static String answer="";
 
     /**
      * This method Verify the input number with head and tail commands.
      */
-    public static boolean numberChecker(String storedValue, int num)
-    {
+    private static boolean numberChecker(String storedValue, int num) {
         return num == 0 || storedValue.equals("") || storedValue.equals("Illegal Input");
     }
 
@@ -42,9 +38,8 @@ public class Pipe {
      * This method Verify the String with all other commands except head and tail.
      */
 
-    public static boolean stringChecker(String storedValue)
-    {
-        if(storedValue.equals("") || storedValue.equals("Illegal Input")) {
+    private static boolean stringChecker(String storedValue) {
+        if (storedValue.equals("") || storedValue.equals("Illegal Input")) {
             logger.error("INPUT ERROR");
             return true;
         }
@@ -56,25 +51,27 @@ public class Pipe {
      * Previous answer becomes input for head with -n.
      */
 
-    public static String head(String storedValue, int num)
-    {
-        logger.info("input - "+ storedValue);
-        logger.info("head count - "+num);
+    private static String head(String storedValue, int num) {
+        logger.info("input - " + storedValue);
+        logger.info("head count - " + num);
 
-        if(numberChecker(storedValue, num)) {
+        if (numberChecker(storedValue, num)) {
             logger.error("HEAD INPUT ERROR");
             return "Illegal Input";
         }
         StringBuilder data = new StringBuilder();
         String[] arr = storedValue.split("\n\r|\n|\r");
 
-        if(num>arr.length)
-            num= arr.length;
+        if (num > arr.length)
+            num = arr.length;
         for (int j = 0; j < num; j++) {
-            data.append(arr[j]).append("\n");
-            logger.trace("Head command - DATA - "+arr[j]);
+            if (j < num - 1) {
+                data.append(arr[j]).append("\n");
+                logger.trace("Head command - DATA - " + arr[j]);
+            } else {
+                data.append(arr[j]);
+            }
         }
-        logger.debug("");
         logger.info("Head method executed");
         return data.toString();
     }
@@ -83,24 +80,27 @@ public class Pipe {
      * Previous answer becomes input for tail with -n.
      */
 
-    public static String tail(String storedValue, int num)
-    {
-        logger.info("input - "+ storedValue);
-        logger.info("tail count - "+num);
+    private static String tail(String storedValue, int num) {
+        logger.info("input - " + storedValue);
+        logger.info("tail count - " + num);
 
-        if(numberChecker(storedValue, num)) {
+        if (numberChecker(storedValue, num)) {
             logger.error("TAIL INPUT ERROR");
             return "Illegal Input";
         }
-        StringBuilder data= new StringBuilder();
-        String[] reverse= storedValue.split("\n\r|\n|\r");
-        int length=reverse.length;
+        StringBuilder data = new StringBuilder();
+        String[] reverse = storedValue.split("\n\r|\n|\r");
+        int length = reverse.length;
 
-        if(num>reverse.length)
-            num= reverse.length;
-        for(int j=length-num; j<length; j++) {
-            data.append(reverse[j]).append("\n");
-            logger.debug("Tail Data - "+reverse[j]);
+        if (num > reverse.length)
+            num = reverse.length;
+        for (int j = length - num; j < length; j++) {
+            if (j < length - 1) {
+                data.append(reverse[j]).append("\n");
+                logger.debug("Tail Data - " + reverse[j]);
+            } else {
+                data.append(reverse[j]);
+            }
         }
         logger.info("Tail method executed");
         return data.toString();
@@ -110,22 +110,28 @@ public class Pipe {
      * Search file in pwd and return contents in form of String.
      */
 
-    public static String cat(String filename) throws IOException {
+    private static String cat(String path) throws IOException {
         String data;
+
         try {
-            String path;
-            if(filename == null) {
-                path = System.getProperty("user.dir");
-            }else {
-                path = filename;
+            if (path != null) {
+                File file = new File(path);
+                if (file.exists()) {
+                    logger.info("File Path- " + path);
+                    data = Files.readString(Path.of(path));
+                    logger.debug("DATA -" + data);
+                }
+                else {
+                    return "File does not exist";
+                }
+            } else {
+                logger.error("Path is null");
+                return "Path is null";
             }
-            logger.info("File Path- " + path);
-            data = new String(Files.readAllBytes(Path.of(path)));
-            logger.debug("DATA -" + data);
             logger.info("Cat executed");
         } catch (IOException e) {
-            logger.error("CAT INPUT ERROR - "+e);
-            throw new IOException("Cat Input error");
+            logger.error("IOException - " + e);
+            return e.getMessage();
         }
         return data;
     }
@@ -133,19 +139,17 @@ public class Pipe {
     /**
      * List files in pwd.
      */
-
-    public static String ls()
-    {
-        String path=System.getProperty("user.dir");
-        logger.warn("System Default Path - "+path);
+    private static String ls() {
+        String path = System.getProperty("user.dir");
+        logger.warn("System Default Path - " + path);
         File f = new File(path);
-        String[] arr =f.list();
+        String[] arr = f.list();
 
-        StringBuilder data= new StringBuilder();
-        for(int i = 0; i< Objects.requireNonNull(arr).length; i++) {
-            if(arr[i].charAt(0)!='.')
+        StringBuilder data = new StringBuilder();
+        for (int i = 0; i < Objects.requireNonNull(arr).length; i++) {
+            if (arr[i].charAt(0) != '.')
                 data.append(arr[i]).append("\n");
-            logger.debug("LS -DATA - "+arr[i]);
+            logger.debug("LS -DATA - " + arr[i]);
         }
         logger.info("LS executed");
         return data.toString();
@@ -155,10 +159,9 @@ public class Pipe {
      * Filter searches for a particular input, and displays all lines that contain that pattern.
      */
 
-    public static String grep(String storedValue,String str)
-    {
-        logger.info("input -"+storedValue);
-        if(stringChecker(storedValue)) {
+    private static String grep(String storedValue, String str) {
+        logger.info("input -" + storedValue);
+        if (stringChecker(storedValue)) {
             logger.error("grep input error");
             return "Illegal Input";
         }
@@ -168,7 +171,7 @@ public class Pipe {
         for (String s : arr) {
             if (s.contains(str))
                 data.append(s).append("\n");
-            logger.debug("grep append - "+s);
+            logger.debug("grep append - " + s);
         }
         logger.info("grep executed");
         return data.toString();
@@ -177,54 +180,48 @@ public class Pipe {
     /**
      * Filters out the repeated lines in answer variable.
      */
+    private static String uniq(String storedValue) {
+        logger.info("input- " + storedValue);
+        String[] arr = storedValue.split("\n");
+        Set<String> a = new TreeSet<>();                       //creating a set to get unique values in sorted order
+        Collections.addAll(a, arr);
+        StringBuilder s = new StringBuilder();
+        for (String i : a) {
+            if (!i.equals(arr[arr.length - 1])) {
+                s.append(i).append("\n");
+            } else {
+                s.append(i);
+            }
 
-    public static String uniq(String storedValue)
-    {
-        logger.info("input- "+storedValue);
-        if(stringChecker(storedValue)) {
-            logger.error("uniq - input error");
-            return "Illegal Input";
         }
-        StringBuilder data = new StringBuilder();
-        String[] arr = storedValue.split("\n\r|\n|\r");
-
-        data.append(arr[0]).append("\n");
-        for(int i=1;i<arr.length-1;i++) {
-            if(arr[i].equals(arr[i-1]))
-                continue;
-            else
-                data.append(arr[i]).append("\n");
-            logger.debug("uniq append - "+arr[i]);
-        }
-        logger.info("uniq executed");
-        return data.toString();
+        return s.toString();
     }
 
     /**
      * Number of lines, word count, byte/characters count of answer variable.
      */
 
-    public static String wc(String storedValue)
-    {
-        logger.info("input - "+storedValue);
-        if(stringChecker(storedValue)) {
+    private static String wc(String storedValue) {
+        logger.info("input - " + storedValue);
+        if (stringChecker(storedValue)) {
             logger.error("wc input error");
             return "Illegal Input";
         }
-        long wordCount,lineCount,characters;
-        characters=0;
-        String[] arr = storedValue.split("\n");
-        lineCount=arr.length;
+        long wordCount, lineCount;
+        String[] arr = storedValue.split("\n\r|\n|\r");
+        lineCount = arr.length;
 
-        arr=storedValue.split(" ");
-        wordCount=arr.length;
-
-        for(int i = 0; i < storedValue.length(); i++) {
-            characters++;
-            logger.debug("wc - data - "+characters);
+        Pattern p = Pattern.compile("[a-zA-Z0-9]+");
+        Matcher m = p.matcher(storedValue);
+        ArrayList<String> array = new ArrayList<>();
+        while (m.find()) {
+            logger.debug(m.group());
+            array.add(m.group());
         }
-        String data="";
-        data=data+lineCount+" "+wordCount+" "+characters;
+        wordCount = array.size();
+
+        String data = (lineCount == 0 ? 1 : lineCount - 1) + "\t" + wordCount + "\t" + storedValue.length();
+
 
         logger.info("wc -executed");
         return data;
@@ -234,101 +231,119 @@ public class Pipe {
      * Sorts the contents of answer variable, line by line.
      */
 
-    public static String mySort(String storedValue)
-    {
-        logger.info("input - "+storedValue);
-        if(stringChecker(storedValue)) {
-            logger.error("sort input error");
-            return "Illegal Input";
-        }
-        StringBuilder data = new StringBuilder();
-        String[] arr = storedValue.split("\n\r|\n|\r");
+    private static String mySort(String storedValue) {
+        logger.info("input - " + storedValue);
+        String[] arr = storedValue.split("\n");                             //split String by new lines.
+        Arrays.sort(arr);                                               //sort array in alphabetic manner
+        StringBuilder s = new StringBuilder();
+        for (String i : arr) {
+            if (!i.equals(arr[arr.length - 1])) {
+                s.append(i).append("\n");
+            } else {
+                s.append(i);
+            }
 
-        Arrays.sort(arr, Comparator.comparingInt(str -> str.charAt(0)));
-
-        for (String s : arr) {
-            data.append(s).append("\n");
-            logger.debug("sort - "+s);
         }
-        logger.info("sort executed");
-        return data.toString();
+        return s.toString();
+
     }
 
     /**
      * Select is used to call respective methods.
      */
 
-    public static void select(String str) throws Exception {
+    private String select(String str) throws IOException {
 
 
         String[] myList = str.split("\\s");
-        logger.debug("Command - "+ Arrays.toString(myList));
+        logger.debug("Command - " + Arrays.toString(myList));
 
-        switch(myList[0])
-        {
-            case "cat": {  logger.info("cat method invoked"); answer="";
-                answer += cat(myList[1]);
-                logger.debug("cat result: "+answer);
+        switch (myList[0]) {
+            case "cat": {
+                logger.info("cat method invoked");
+                answer = cat(myList[1]);
+                logger.debug("cat result: " + answer);
             }
             break;
-            case "head":{ logger.info("head method invoked");  String storedValue =answer;
-                int num=Character.getNumericValue(myList[1].charAt(1));
-                answer="";
-                answer+=head(storedValue,num);
-                logger.debug("head result: "+answer);
+            case "head": {
+                logger.info("head method invoked");
+                String storedValue = answer;
+                int num = Character.getNumericValue(myList[1].charAt(1));
+
+                answer = head(storedValue, num);
+                logger.debug("head result: " + answer);
             }
             break;
-            case "tail": {  logger.info("tail method invoked"); String storedValue =answer;
-                int num=Character.getNumericValue(myList[1].charAt(1));
-                answer="";
-                answer+=tail(storedValue,num);
-                logger.debug("tail result: "+answer);
+            case "tail": {
+                logger.info("tail method invoked");
+                String storedValue = answer;
+                int num = Character.getNumericValue(myList[1].charAt(1));
+
+                answer = tail(storedValue, num);
+                logger.debug("tail result: " + answer);
             }
             break;
-            case "ls": {  logger.info("ls method invoked");  answer="";
-                answer+=ls();
-                logger.debug("ls result: "+answer);
+            case "ls": {
+                logger.info("ls method invoked");
+                answer = ls();
+                logger.debug("ls result: " + answer);
             }
             break;
-            case "wc": { logger.info("wc method invoked");   String storedValue=answer;
-                answer="";
-                answer+=wc(storedValue);
-                logger.debug("wc result: "+answer);
+            case "wc": {
+                logger.info("wc method invoked");
+                String storedValue = answer;
+
+                answer = wc(storedValue);
+                logger.debug("wc result: " + answer);
             }
             break;
-            case "sort": { logger.info("sort method invoked");  String storedValue=answer;
-                answer="";
-                answer+= mySort(storedValue);
-                logger.debug("sort result: "+answer);
+            case "sort": {
+                logger.info("sort method invoked");
+                String storedValue = answer;
+
+                answer = mySort(storedValue);
+                logger.debug("sort result: " + answer);
             }
             break;
-            case "uniq": { logger.info("uniq method invoked");  String storedValue=answer;
-                answer="";
-                answer+=uniq(storedValue);
-                logger.debug("uniq result: "+answer);
+            case "uniq": {
+                logger.info("uniq method invoked");
+                String storedValue = answer;
+
+                answer = uniq(storedValue);
+                logger.debug("uniq result: " + answer);
             }
             break;
-            case "grep":{ logger.info("grep method invoked");  String storedValue=answer;
-                answer="";
-                answer += grep(storedValue,myList[1]);
-                logger.debug("grep result: "+answer);
+            case "grep": {
+                logger.info("grep method invoked");
+                String storedValue = answer;
+
+                answer = grep(storedValue, myList[1]);
+                logger.debug("grep result: " + answer);
             }
             break;
             default:
-                System.out.println("No such command exists");
                 logger.error("command not matched");
+                return "No such command exists";
         }
+        return answer;
 
     }
 
-
-    public static void main(String[] args)  {
-
+    public String pipe(String args) {
+        String result = null;
+        Pipe pipe = new Pipe();
         try {
             logger.info("Pipe program invoked");
             logger.info("Command input from CLI");
-            String[] command = args[0].split("\\|");
-            ArrayList<String> myList = new ArrayList<>();
+            String[] command;
+            ArrayList<String> myList;
+            if(args != null) {
+                command = args.split("\\|");
+                myList = new ArrayList<>();
+            }else{
+                logger.error("CLI is null");
+                return null;
+            }
         /* First: Split the input from pipe " | " .
            leftTrim: Remove all the left spaces.
            rightTrim: Remove all right spaces.
@@ -340,25 +355,23 @@ public class Pipe {
                 String rightTrim = leftTrim.replaceAll("\\s+$", "");
                 String center = rightTrim.replaceAll("\\s+", " ");
                 myList.add(center);
-                logger.debug("Pipe Command - "+center);
+                logger.debug("Pipe Command - " + center);
             }
-            logger.debug("Method parameters - "+myList);
+            logger.debug("Method parameters - " + myList);
             // Evaluate all commands one by one.
             logger.info("Invoking switch case and passing parameter");
             int i = 0;
             while (i < myList.size()) {
-                select(myList.get(i));
+                result = pipe.select(myList.get(i));
                 i++;
-                logger.debug("Executing -PIPE - "+myList.get(i));
             }
-
-
+        } catch (IOException e) {
+            logger.error("IOException - " + e.getMessage());
         }
-        catch (Exception e){
-            logger.error("INPUT ERROR - main - "+e.getMessage());
-        }
-        System.out.println(answer);
-        logger.debug("Result - "+answer);
+
+        logger.debug("Result - " + result);
         logger.info("Pipe executed");
+        return result;
     }
+
 }
