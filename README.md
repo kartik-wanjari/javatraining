@@ -27,14 +27,5 @@ This exercise includes use of file handling, string manipulation, exception hand
 #### Zip and unzip
 - [zipping, unzipping and sending automated mails files](https://github.com/kartik-wanjari/javatraining/tree/dev/zipper)
 
-
-## FAQ
-
-#### Question 1
-
-Answer 1
-
-#### Question 2
-
-Answer 2
-
+#### Testing
+- [JUnit5 testing for converter and pipe programs](https://github.com/kartik-wanjari/javatraining/tree/dev/test)
