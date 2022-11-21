@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<body style="text-align:center;" id="body">
+    <title>
+        Table
+    </title>
+    <h1>
+        Table
+    </h1>
+    <button onclick="showAllContent('#table')">
+        View table
+    </button>
+
+    <br><br>
+    <div id="formID">
+
+    </div>
+    <div id="div"></div>
+    <div>
+
+        <table align="center" id="table" border="1"></table>
+    </div>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script>
+        var response;
+
+        var baseURL = "http://localhost:8080/RestApp/webapi/azuga";
+        $.getJSON(baseURL, function (result) {
+            console.log("Inside the function");
+            console.log(result);
+            response = result;
+            for (i = 0; i < result.length; i++)
+                console.log(result[i]);
+        });
+
+        function handleDelete(data) {
+            let id = "";
+            Object.entries(data).forEach(([key, value]) => {
+
+                if (key == "objectID") {
+                    id = value;
+                }
+
+            }); fetch("http://localhost:8080/RestApp/webapi/azuga/delete/" + id, {
+                method: "DELETE",
+                mode: "cors"
+            }).then(response => response.text()).then(data => console.log(data)).catch(err => { console.log(err) });
+        }
+        function handleUpdate(data) {
+            let form = "";
+            Object.entries(data).forEach(([key, val]) => {
+
+                form += `<label>${key}<label><br>`;
+                form += `<input type="text" id=${key} name=${key} value=${JSON.stringify(val)}></input><br>`;
+
+            });
+            form += `<button onclick=putMethod(${JSON.stringify(data)})>Submit</button>`;
+            document.getElementById("formID").innerHTML = form;
+        }
+        function handleInsert(data) {
+            let form = "";
+            Object.entries(data).forEach(([key, val]) => {
+                form += `<label>${key}<label><br>`;
+                form += `<input type="text" id=${key} name=${key}></input><br>`;
+            });
+            console.log("form formed");
+            form += `<button onclick=postMethod(${JSON.stringify(data)})>Submit</button>`;
+            document.getElementById("div").innerHTML = form;
+        }
+
+        function postMethod(data) {
+            let jsonString = "{";
+            Object.entries(data).forEach(([key, val]) => {
+                jsonString += `"${key}":"${document.getElementById(key).value}",`;
+            });
+            jsonString += "}";
+            let json = jsonString.replace(",}", "}");
+            console.log(json)
+
+            fetch("http://localhost:8080/RestApp/webapi/azuga/insert", {
+                method: "POST",
+                mode: "cors",
+                Headers: {
+                    'Content-Type': 'text/plain'
+                },
+                body: json
+            }).then((res) => {
+                if (res.ok) {
+                    console.log("http request successful")
+                } else {
+                    console.log("http request unsuccessful")
+                }
+                return res;
+            }).then(response => response.text())
+                .then(data => console.log(data))
+                .catch((err) => {
+                    console.log(err)
+                    alert(err);
+                });
+        }
+        function putMethod(data) {
+            let jsonString = "{";
+            Object.entries(data).forEach(([key, val]) => {
+                let updatedValue = document.getElementById(key).value;
+                jsonString += `"${key}":"${document.getElementById(key).value}",`;
+            });
+            jsonString += "}";
+            var json = jsonString.replace(",}", "}");
+            console.log(json)
+            alert(json)
+
+            fetch("http://localhost:8080/RestApp/webapi/azuga/update-data", {
+                method: "PUT",
+                mode: "cors",
+                Headers: {
+                    'Content-Type': 'text/plain'
+                },
+                body: json
+            })
+                .then((res) => {
+                    if (res.ok) {
+                        console.log("http request successful")
+                    } else {
+                        console.log("http request unsuccessful")
+                    }
+                    return res;
+                }).then(response => response.text()).then(data => alert(data)).catch((err) => { alert(err); console.log(err) });
+        }
+
+        function showAllContent(selector) {
+            var column = Headers(response, selector);
+            let insert = "";
+            for (var i = 0; i < response.length; i++) {
+                var row = $('<tr/>');
+                for (var colIndex = 0; colIndex < column.length; colIndex++) {
+                    var val = response[i][column[colIndex]];
+                    if (val == null) val = "";
+                    row.append($('<td/>').html(val));
+                }
+                row.append($(`<td><button style=\"background-color:blue;border-color:blue;color:white;\" onClick=handleUpdate(${JSON.stringify(response[i]).replace(/\s+/g, '')})>Update</button>`
+                    + `<button style=\"background-color:red;border-color:red;color:white;\"  onClick=handleDelete(${JSON.stringify(response[i]).replace(/\s+/g, '')})>Delete</button>`));
+                insert = `<button onClick=handleInsert(${JSON.stringify(response[i]).replace(/\s+/g, '')})>Insert</button>`;
+                $(selector).append(row).html;
+            }
+            document.getElementById("div").innerHTML = insert;
+
+        }
+
+
+        function Headers(myresult, selector) {
+            var columns = [];
+            var header = $('<tr/>');
+            for (var i = 0; i < myresult.length; i++) {
+                var row = myresult[i];
+                for (var k in row) {
+                    if ($.inArray(k, columns) == -1) {
+                        columns.push(k);
+                        header.append($('<th/>').html(k));
+                    }
+                }
+            }
+            header.append($('<th>Action</th>'));
+            $(selector).append(header);
+            return columns;
+        }
+
+
+    </script>
+    </head>
+
+    <body>
+
+        <div></div>
+
+    </body>
+
+</html>
