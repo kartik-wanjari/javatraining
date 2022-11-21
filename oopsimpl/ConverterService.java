@@ -17,7 +17,7 @@ import java.io.IOException;
 
 public interface ConverterService {
      void csvToHtml(File file);
-     void csvToPdf(String path);
+     void csvToPdf(String path) throws IOException, DocumentException, CsvValidationException;
      void jsonToXML(String path);
 
 }
