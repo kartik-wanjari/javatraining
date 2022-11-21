@@ -1,0 +1,114 @@
+**INSERT**
+var p= {}
+p.restaurant_id='40361708'
+p.name = "Biryani zone"
+p.grades=""
+p.cuisine="Hyderabadi"
+p.borough=""
+p.address=""
+db.restaurants.insertOne(p)
+
+**FIND**
+db.restaurants.find().pretty()
+
+**FIND BY SELECTION**
+db.restaurants.find({restaurant_id:"40361708"}).pretty()
+
+**UPDATE**
+db.restaurants.updateOne({_id: ObjectId("635a4a10a4ea0ce51a56318e")},{$set:{name:'Orient'}})
+db.restaurants.find({_id: ObjectId("635a4a10a4ea0ce51a56318e")}).pretty()
+
+**SELECTION AND PROJECTION**
+db.restaurants.find({borough:'Brooklyn'},{_id:0,name:1,address:1})
+
+**DELETE**
+db.restaurants.deleteOne({name:'Al zam zam'})
+
+**REGEX**
+db.restaurants.find( { cuisine: { $regex: /^p.*/ } } )
+
+**DELETE MANY**
+db.restaurants.deleteMany({cuisine:'Hyderabadi'})
+
+**AGGREGATE**
+db.restaurants.aggregate(
+    { 
+    $sort: { "borough": -1 } 
+  },{
+    $limit: 5
+  }
+)
+
+**ARRAY**
+db.restaurants.find({"address.street":"Clove Road"}).pretty()
+
+**OPERATOR**
+db.restaurants.find({"grades.score":{$gte:10}}).limit(5).pretty()
+
+db.restaurants.find({"address.street": 'Clove Road'},{
+    _id:0,name:1,"address.$":1
+}).pretty()
+
+**UPDATE**
+db.restaurants.updateOne({grades:{$elemMatch:{
+    date: ISODate("2014-07-21T00:00:00.000Z"),
+    grade: 'A',
+    score: 11
+    }}},{
+        $set:{"grades.$.michelin":"3 Star"}
+    })
+
+db.restaurants.find({"grades.michelin":"3 Star"}).pretty()
+
+**MAP REDUCE**
+db.person.mapReduce(function () {emit(this.gender, this.age);}, function (key, values) {return Array.sum(values)}, { out: { inline: 1 } })
+
+**INDEXING**
+db.person.createIndex({ eyeColor: 1 })
+db.person.getIndexes()
+db.person.dropIndex({eyeColor:1})
+
+db.person.find({eyeColor:"blue"}).pretty()
+db.person.find({eyeColor:"blue"}).explain("executionStats")
+
+    --COMPOSITE INDEXING
+    db.person.createIndex({ eyeColor: 1, favoriteFruit:-1})
+    db.person.find({eyeColor:"blue", favoriteFruit:"apple"}).pretty()
+
+    --EMBEDDED DOCUMENT
+    db.person.createIndex({ "company.title": 1})
+    db.person.find({"company.title":"MAINELAND"}).pretty()
+
+
+**VALIDATION**
+db.createCollection( "person",
+{
+    validator: { $jsonSchema: {
+       bsonType: "object",
+       required: [
+            "phone",
+            "name"
+        ],
+       properties: {
+          phone: {
+             bsonType: "string",
+             description: "phone must be a string and is required"
+            },
+          name: {
+             bsonType: "string",
+             description: "name must be a string and is required"
+            }
+        }
+    }
+},
+    validationLevel: "moderate"
+} )
+
+
+
+
+ db.validate.insertOne({phone:'124',name: '10'
+})
+
+db.validate.insertOne({phone: "1132423",name: 21
+})
